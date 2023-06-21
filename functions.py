@@ -1,10 +1,10 @@
+import datetime # For datetime objects
+import subprocess # For executing a shell command
+from time import sleep # For sleep()
+import sys # For sys.argv, sys.exit()
 
-import subprocess
-from time import sleep
+from objects import MyFile # For MyFile objects
 
-class MyFile:
- def __init__(self,path):
-  self.name=path 
 def run_command(command):
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
@@ -24,9 +24,15 @@ def run_command(command):
        # The run_command() function is responsible for logging STDERR 
        print("Error: " + str(err))
 
-output = run_command("rclone lsl /srv/dev-disk-by-uuid-6446a701-ccc2-401f-a38d-b3fded4d83fc/")
-list = []
-for line in output:
- list.append(MyFile(line))
-# print(a)
-print(len(list))
+def getFilesFromFolder(baseFolder):
+    output = run_command("rclone lsl "+baseFolder)
+    files = []
+    for line in output:
+        line = line.lstrip()
+        if line != "":
+            size = line.split(" ")[0]
+            date_time_str = line.split(" ")[1]+" "+line.split(" ")[2]
+            date_time_obj = datetime.datetime.strptime(date_time_str[:-3], '%Y-%m-%d %H:%M:%S.%f')
+            filename = " ".join(line.split(" ")[3:])
+            files.append(MyFile(filename, size, date_time_obj))
+    return files
