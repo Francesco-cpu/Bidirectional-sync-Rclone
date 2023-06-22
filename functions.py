@@ -26,13 +26,7 @@ def run_command(command):
 
 def getFilesFromFolder(baseFolder):
     output = run_command("rclone lsl "+baseFolder)
-    files = []
-    for line in output:
-        line = line.lstrip()
-        if line != "":
-            size = line.split(" ")[0]
-            date_time_str = line.split(" ")[1]+" "+line.split(" ")[2]
-            date_time_obj = datetime.datetime.strptime(date_time_str[:-3], '%Y-%m-%d %H:%M:%S.%f')
-            filename = " ".join(line.split(" ")[3:])
-            files.append(MyFile(filename, size, date_time_obj))
+    files = {MyFile(" ".join(parts[3:]), parts[0], datetime.datetime.strptime((parts[1]+" "+parts[2])[:-3], '%Y-%m-%d %H:%M:%S.%f'))
+             for line in output if line.strip()
+             for parts in [line.split()]}
     return files

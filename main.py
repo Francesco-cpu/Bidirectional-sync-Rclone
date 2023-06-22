@@ -1,44 +1,46 @@
-import sys # For sys.argv, sys.exit()
-import threading 
+import sys
+import multiprocessing
 
 from functions import run_command, getFilesFromFolder
 from objects import MyFile
 
-listLocal =[]
-listRemote =[]
+def listLocalFiles(queue):
+    files = getFilesFromFolder(baseFolderLocal)
+    queue.put(files)
 
-def listLocalFiles():
-    global listLocal
-    listLocal = getFilesFromFolder(baseFolderLocal)
+def listRemoteFiles(queue):
+    files = getFilesFromFolder(baseFolderRemote)
+    queue.put(files)
 
-def listRemoteFiles():
-    global listRemote
-    listRemote = getFilesFromFolder(baseFolderRemote)
+if __name__ == '__main__':
+    if len(sys.argv) > 2:
+        baseFolderLocal = sys.argv[1]
+        baseFolderRemote = sys.argv[2]
+    else:
+        print("Usage: python main.py <local folder> <remote folder>")
+        sys.exit(1)
 
+    local_queue = multiprocessing.Queue()
+    remote_queue = multiprocessing.Queue()
 
-if len(sys.argv) > 2:
-    baseFolderLocal = sys.argv[1]
-    baseFolderRemote = sys.argv[2]
-else:
-    print("Usage: python main.py <local folder> <remote folder>")
-    sys.exit(1)
+    x = multiprocessing.Process(target=listLocalFiles, args=(local_queue,))
+    y = multiprocessing.Process(target=listRemoteFiles, args=(remote_queue,))
 
-x = threading.Thread(target=listLocalFiles)
+    x.start()
+    y.start()
 
-y= threading.Thread(target=listRemoteFiles)
-x.start()
-y.start()
+    listLocal = local_queue.get()
+    listRemote = remote_queue.get()
 
-x.join()
-y.join()
+    x.join()
+    y.join()
 
-print(len(listLocal))
+    print(len(listLocal))
+    print(len(listRemote))
 
-print(len(listRemote))
+    listLocalPurged = listLocal - listRemote
+    listRemote -= listLocal
+    listLocal = listLocalPurged
 
-listLocal = [file for file in listLocal if file not in listRemote]
-listRemote = [file for file in listRemote if file not in listLocal]
-
-print(len(listLocal))
-
-print(len(listRemote))
+    print(len(listLocal))
+    print(len(listRemote))
