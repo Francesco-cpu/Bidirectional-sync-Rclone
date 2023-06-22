@@ -3,6 +3,8 @@ import subprocess # For executing a shell command
 from time import sleep # For sleep()
 import sys # For sys.argv, sys.exit()
 
+import fnmatch # For fnmatch.fnmatch()
+
 from objects import MyFile # For MyFile objects
 
 def run_command(command):
@@ -24,9 +26,22 @@ def run_command(command):
        # The run_command() function is responsible for logging STDERR 
        print("Error: " + str(err))
 
-def getFilesFromFolder(baseFolder):
+def getFilesFromFolder(baseFolder, excludePatterns=None):
     output = run_command("rclone lsl "+baseFolder)
     files = {MyFile(" ".join(parts[3:]), parts[0], datetime.datetime.strptime((parts[1]+" "+parts[2])[:-3], '%Y-%m-%d %H:%M:%S.%f'))
              for line in output if line.strip()
              for parts in [line.split()]}
+    if excludePatterns is not None:
+        filtered_files = set()
+        for file in files:
+            if shouldIncludeFile(file, excludePatterns):
+                filtered_files.add(file)
+        files = filtered_files
     return files
+
+def shouldIncludeFile(file, excludePatterns):
+    for pattern in excludePatterns:
+        if fnmatch.fnmatch(file.name, pattern):
+            print("Excluding file: "+file.name+" because it matches pattern: "+pattern)
+            return False
+    return True
