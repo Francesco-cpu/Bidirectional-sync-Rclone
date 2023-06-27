@@ -31,6 +31,7 @@ def getFilesFromFolder(baseFolder, excludePatterns=None):
     files = {MyFile(" ".join(parts[3:]), parts[0], datetime.datetime.strptime((parts[1]+" "+parts[2])[:-3], '%Y-%m-%d %H:%M:%S.%f'))
              for line in output if line.strip()
              for parts in [line.split()]}
+    print("files loaded")
     if excludePatterns is not None:
         filtered_files = set()
         for file in files:

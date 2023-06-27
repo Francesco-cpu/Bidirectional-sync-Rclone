@@ -6,9 +6,6 @@ from functions import run_command, getFilesFromFolder
 from objects import MyFile
 
 def listLocalFiles(queue, excludePatterns=None):
-    print("Listing local files")
-    print("Base folder: "+baseFolderLocal)
-    print("Exclude: "+str(excludePatterns))
     files = getFilesFromFolder(baseFolderLocal, excludePatterns)
     queue.put(files)
 
