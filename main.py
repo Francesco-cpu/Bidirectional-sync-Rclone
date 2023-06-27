@@ -5,18 +5,18 @@ import argparse
 from functions import run_command, getFilesFromFolder
 from objects import MyFile
 
-def listLocalFiles(queue, excludePatterns=None, verbose=False):
+def listLocalFiles(queue, excludePatterns=None, excludeIfPresent = None, verbose=False):
     if verbose:
         print("Listing local files...")
-    files = getFilesFromFolder(baseFolderLocal, excludePatterns, verbose)
+    files = getFilesFromFolder(baseFolderLocal, excludePatterns, excludeIfPresent, verbose)
     queue.put(files)
     if verbose:
         print("Local files listed.")
 
-def listRemoteFiles(queue, excludePatterns=None, verbose=False):
+def listRemoteFiles(queue, excludePatterns=None, excludeIfPresent = None, verbose=False):
     if verbose:
         print("Listing remote files...")
-    files = getFilesFromFolder(baseFolderRemote, excludePatterns, verbose)
+    files = getFilesFromFolder(baseFolderRemote, excludePatterns, excludeIfPresent, verbose)
     queue.put(files)
     if verbose:
         print("Remote files listed.")
@@ -27,6 +27,8 @@ if __name__ == '__main__':
     parser.add_argument('remote_folder', help='Path to remote folder')
     parser.add_argument('--exclude-from-local', nargs='*',help='Exclude patterns for local folder as a list of strings separated by spaces')
     parser.add_argument('--exclude-from-remote', nargs='*',help='Exclude patterns for remote folder as a list of strings separated by spaces')
+    parser.add_argument('--exclude-if-present-local', nargs='*',help='Exclude a folder if there is a file that matches the pattern in local folder as a list of strings separated by spaces')
+    parser.add_argument('--exclude-if-present-remote', nargs='*',help='Exclude a folder if there is a file that matches the pattern in remote folder as a list of strings separated by spaces')
     parser.add_argument('-v','--verbose', action='store_true', help='Enable verbose output')
     args = parser.parse_args()
 
@@ -34,13 +36,16 @@ if __name__ == '__main__':
     baseFolderRemote = args.remote_folder
     excludeFileLocal = args.exclude_from_local
     excludeFileRemote = args.exclude_from_remote
+    excludeIfPresentLocal = args.exclude_if_present_local
+    excludeIfPresentRemote = args.exclude_if_present_remote
     verbose = args.verbose
+
 
     local_queue = multiprocessing.Queue()
     remote_queue = multiprocessing.Queue()
 
-    x = multiprocessing.Process(target=listLocalFiles, args=(local_queue, excludeFileLocal, verbose))
-    y = multiprocessing.Process(target=listRemoteFiles, args=(remote_queue, excludeFileRemote, verbose))
+    x = multiprocessing.Process(target=listLocalFiles, args=(local_queue, excludeFileLocal, excludeIfPresentLocal, verbose))
+    y = multiprocessing.Process(target=listRemoteFiles, args=(remote_queue, excludeFileRemote, excludeIfPresentRemote, verbose))
 
     x.start()
     y.start()
@@ -51,13 +56,13 @@ if __name__ == '__main__':
     x.join()
     y.join()
 
-    if verbose:
-        print("Local files:")
-        for file in listLocal:
-            print(file)
-        print("Remote files:")
-        for file in listRemote:
-            print(file)
+    # if verbose:
+    #     print("Local files:")
+    #     for file in listLocal:
+    #         print(file)
+    #     print("Remote files:")
+    #     for file in listRemote:
+    #         print(file)
 
     print(len(listLocal))
     print(len(listRemote))
