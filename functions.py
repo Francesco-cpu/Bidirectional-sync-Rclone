@@ -26,23 +26,22 @@ def run_command(command):
        # The run_command() function is responsible for logging STDERR 
        print("Error: " + str(err))
 
-def getFilesFromFolder(baseFolder, excludePatterns=None):
+def getFilesFromFolder(baseFolder, excludePatterns=None, verbose=False):
+    if verbose:
+        print(f"Listing files in {baseFolder}...")
     output = run_command("rclone lsl "+baseFolder)
     files = {MyFile(" ".join(parts[3:]), parts[0], datetime.datetime.strptime((parts[1]+" "+parts[2])[:-3], '%Y-%m-%d %H:%M:%S.%f'))
              for line in output if line.strip()
-             for parts in [line.split()]}
-    print("files loaded")
-    if excludePatterns is not None:
-        filtered_files = set()
-        for file in files:
-            if shouldIncludeFile(file, excludePatterns):
-                filtered_files.add(file)
-        files = filtered_files
+             for parts in [line.split()]
+             if excludePatterns is None or shouldIncludeFile(MyFile(" ".join(parts[3:]), parts[0], datetime.datetime.strptime((parts[1]+" "+parts[2])[:-3], '%Y-%m-%d %H:%M:%S.%f')), excludePatterns, verbose)}
+    if verbose:
+        print(f"{len(files)} files listed in {baseFolder}.")
     return files
 
-def shouldIncludeFile(file, excludePatterns):
+def shouldIncludeFile(file, excludePatterns, verbose=False):
     for pattern in excludePatterns:
         if fnmatch.fnmatch(file.name, pattern):
-            print("Excluding file: "+file.name+" because it matches pattern: "+pattern)
+            if verbose:
+                print(f"Excluding file {file.name} because it matches pattern {pattern}")
             return False
     return True
